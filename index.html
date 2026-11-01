@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<style>*,*::before,*::after{box-sizing:border-box}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>NuSpark Nurture Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: control rail left; right side = score readout, then two lanes (Standard | Accelerate) side by side, outcome and log below */
+:root{
+  --bg:#f3f6f8; --panel:#ffffff; --ink:#0f2233; --muted:#5a6b7a; --line:#d6e0e7;
+  --navy:#12304d; --teal:#0e8f8a; --teal-soft:#d7f0ee; --amber:#b86d0a; --amber-soft:#fbeed6;
+  --good:#1f8a4c; --good-soft:#dcf2e4; --dim:#a9b6c1;
+  --display:"Bricolage Grotesque","Trebuchet MS",sans-serif;
+  --body:"Figtree","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0b1722; --panel:#122333; --ink:#e6eef4; --muted:#93a6b6; --line:#23394c;
+  --navy:#9fc4e6; --teal:#3cc4bd; --teal-soft:#123a3b; --amber:#e6a64a; --amber-soft:#3a2c14;
+  --good:#58c98a; --good-soft:#13331f; --dim:#4b5f70; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0b1722; --panel:#122333; --ink:#e6eef4; --muted:#93a6b6; --line:#23394c;
+  --navy:#9fc4e6; --teal:#3cc4bd; --teal-soft:#123a3b; --amber:#e6a64a; --amber-soft:#3a2c14;
+  --good:#58c98a; --good-soft:#13331f; --dim:#4b5f70; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1240px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{margin-bottom:18px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--teal)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(28px,4vw,40px);line-height:1.05;margin:4px 0 6px;color:var(--navy);text-wrap:balance}
+.lede{color:var(--muted);max-width:68ch;margin:0}
+.tabs{display:inline-flex;gap:4px;margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px}
+.tabs button{font:inherit;font-weight:600;font-size:14px;border:0;border-radius:7px;padding:8px 16px;background:transparent;color:var(--muted);cursor:pointer}
+.tabs button[aria-selected=true]{background:var(--navy);color:var(--bg)}
+.grid{display:grid;grid-template-columns:290px 1fr;gap:20px;align-items:start;margin-top:16px}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;min-width:0}
+.panel h2{font-family:var(--display);font-size:17px;font-weight:600;margin:0 0 12px;color:var(--navy)}
+label,.lbl{display:block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
+select{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+input[type=range]{width:100%;accent-color:var(--teal)}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:3px}
+.seg.two{grid-template-columns:1fr 1fr}
+.seg button{font:inherit;font-size:13px;font-weight:600;border:0;border-radius:6px;padding:7px 4px;background:transparent;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--panel);color:var(--navy);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.thr{display:flex;justify-content:space-between;font-family:var(--mono);font-size:13px;color:var(--muted)}
+.thr b{color:var(--ink)}
+.check{display:flex;gap:8px;align-items:center;margin-top:14px;font-size:14px;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:500;color:var(--ink)}
+.btns{display:flex;gap:8px;margin-top:16px}
+.btn{flex:1;font:inherit;font-weight:600;font-size:14px;border-radius:8px;padding:10px;cursor:pointer;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.btn.primary{background:var(--teal);border-color:var(--teal);color:var(--bg)}
+.btn:disabled{opacity:.45;cursor:default}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.note{font-size:12px;color:var(--muted);margin:14px 0 0}
+
+.readout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) auto;gap:18px;align-items:center}
+@media (max-width:620px){.readout{grid-template-columns:1fr}}
+.who .name{font-family:var(--display);font-weight:600;font-size:18px}
+.who .meta{color:var(--muted);font-size:13px}
+.sample{font-family:var(--mono);font-size:11px;color:var(--amber);background:var(--amber-soft);padding:2px 6px;border-radius:4px;margin-left:6px;vertical-align:2px}
+.meter{position:relative;height:16px;border-radius:999px;background:var(--bg);border:1px solid var(--line);overflow:hidden}
+.meter .fill{position:absolute;inset:0 auto 0 0;width:0;background:var(--teal);border-radius:999px;transition:width .5s ease,background .3s}
+.meter .mark{position:absolute;top:0;bottom:0;width:3px;background:var(--amber)}
+.ticks{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:4px}
+.score{font-family:var(--display);font-weight:800;font-size:44px;line-height:1;color:var(--navy);font-variant-numeric:tabular-nums;text-align:right}
+.score small{display:block;font-family:var(--mono);font-weight:500;font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.status{margin-top:12px;font-size:13px;font-weight:600;display:inline-block;padding:4px 10px;border-radius:999px;background:var(--teal-soft);color:var(--teal)}
+.status.acc{background:var(--amber-soft);color:var(--amber)}
+.status.crm{background:var(--good-soft);color:var(--good)}
+.status.rest{background:var(--bg);color:var(--muted);border:1px solid var(--line)}
+
+.signals{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.signals .lbl{width:100%;margin:0 0 2px}
+.sig{font:inherit;font-size:13px;border:1px dashed var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:5px 10px;cursor:pointer}
+.sig b{font-family:var(--mono);font-weight:500;color:var(--teal)}
+.sig.trig{border-color:var(--amber)}
+.sig.trig::after{content:" ⚡";color:var(--amber)}
+.sig:hover:not(:disabled){border-style:solid}
+.sig:disabled{opacity:.4;cursor:default}
+.legend{font-size:12px;color:var(--muted);margin-top:6px}
+.legend span{color:var(--amber)}
+
+.lanes{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+@media (max-width:720px){.lanes{grid-template-columns:1fr}}
+.lane{min-width:0;border-radius:12px;padding:12px;border:1px solid var(--line);background:var(--bg);transition:border-color .3s,box-shadow .3s}
+.lane.live{border-color:var(--teal);box-shadow:0 0 0 1px var(--teal)}
+.lane.acc.live{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber)}
+.lane h3{margin:0;font-family:var(--display);font-size:16px;color:var(--navy);display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.lane h3 em{font-style:normal;font-family:var(--mono);font-size:11px;font-weight:500;color:var(--muted)}
+.lane .sub{font-size:13px;color:var(--muted);margin:2px 0 10px}
+.lane.acc h3{color:var(--amber)}
+.track{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.step{display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:start;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--panel);transition:opacity .3s}
+.step .day{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center}
+.step .day b{display:block;font-family:var(--display);font-size:16px;color:var(--navy)}
+.step .ch{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--teal)}
+.lane.acc .step .ch{color:var(--amber)}
+.step .t{font-weight:600;font-size:14px;margin:1px 0}
+.step .d{font-size:12.5px;color:var(--muted)}
+.step .ev{font-size:12px;margin-top:5px;color:var(--good);font-weight:600}
+.step .tag{font-family:var(--mono);font-size:10.5px;padding:2px 6px;border-radius:4px;border:1px solid var(--line);color:var(--dim);white-space:nowrap}
+.step.sent .tag{color:var(--teal);border-color:var(--teal)}
+.lane.acc .step.sent .tag{color:var(--amber);border-color:var(--amber)}
+.step.now{box-shadow:0 0 0 2px var(--teal)}
+.lane.acc .step.now{box-shadow:0 0 0 2px var(--amber)}
+.step.skip{opacity:.4}
+.waiting{font-size:13px;color:var(--muted);border:1px dashed var(--line);border-radius:9px;padding:10px 12px;margin-bottom:8px;background:var(--panel)}
+.waiting b{color:var(--amber)}
+
+.handoff,.rest{margin-top:14px;border-radius:10px;padding:14px 16px;font-size:14px}
+.handoff{border:1px solid var(--good);background:var(--good-soft)}
+.handoff h3{margin:0 0 6px;font-family:var(--display);font-size:16px;color:var(--good)}
+.handoff p{margin:0 0 8px}
+.handoff ul{margin:0;padding-left:18px;font-size:13px}
+.rest{border:1px solid var(--line);background:var(--bg)}
+.rest h3{margin:0 0 6px;font-family:var(--display);font-size:16px;color:var(--navy)}
+
+.log{margin-top:16px;font-family:var(--mono);font-size:12px;color:var(--muted);max-height:190px;overflow:auto;border-top:1px solid var(--line);padding-top:10px}
+.log div{padding:2px 0}
+.log .up{color:var(--teal)} .log .go{color:var(--good)} .log .tr{color:var(--amber)}
+.caveat{margin-top:22px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--panel);font-size:13px;color:var(--muted);max-width:90ch}
+.caveat b{color:var(--ink)}
+.caveat ul{margin:6px 0 0;padding-left:18px}
+.planner{margin-top:16px}
+.planner h2{font-family:var(--display);font-size:19px;font-weight:600;margin:0 0 4px;color:var(--navy)}
+.planner .sub{color:var(--muted);font-size:14px;margin:0 0 14px}
+.prow{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px 14px}
+.prow label{margin:0 0 4px}
+.planner input:not([type=checkbox]),.planner select{width:100%;font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:7px 8px;box-sizing:border-box}
+.tbl{overflow-x:auto;margin-top:8px}
+.tbl table{width:100%;min-width:780px;border-collapse:collapse}
+.tbl th{text-align:left;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:4px 6px}
+.tbl td{padding:3px 4px}
+.tbl td:first-child{width:80px}
+.tbl td:nth-child(2){width:130px}
+.tbl td:nth-child(5){width:240px}
+.tbl td:last-child{width:36px}
+.rm{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:6px;width:32px;height:34px;cursor:pointer;font-size:16px}
+.ph{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:20px}
+.ph h3{margin:0;font-family:var(--display);font-size:16px;color:var(--navy)}
+.ph.acc h3{color:var(--amber)}
+.ph p{margin:0;font-size:13px;color:var(--muted);flex-basis:100%}
+.trigs{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:4px}
+.trigs label{display:flex;gap:6px;align-items:center;text-transform:none;letter-spacing:0;font-weight:500;color:var(--ink);font-size:14px;margin:0;cursor:pointer}
+.small{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:7px;padding:6px 12px;cursor:pointer}
+.small.primary{background:var(--navy);border-color:var(--navy);color:var(--bg)}
+.brief{margin-top:20px;border-top:1px solid var(--line);padding-top:16px}
+.brief textarea{width:100%;min-height:220px;font-family:var(--mono);font-size:12px;line-height:1.5;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;box-sizing:border-box;resize:vertical}
+.copied{font-size:13px;color:var(--good);font-weight:600}
+@media (prefers-reduced-motion:reduce){.meter .fill,.step,.lane{transition:none}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">NuSpark Nurture · planning demo</div>
+    <h1>The step between lead capture and the CRM</h1>
+    <p class="lede">Every captured lead starts in standard nurture. When a lead shows buying behavior before the score is high enough, a trigger moves them into the Accelerate lane with a bottom-funnel offer. Cross the threshold and they go to the CRM, and sales is notified.</p>
+    <div class="tabs" role="tablist" aria-label="Program type">
+      <button type="button" role="tab" id="tab-b2b" aria-selected="true">B2B</button>
+      <button type="button" role="tab" id="tab-saas" aria-selected="false">SaaS trial</button>
+      <button type="button" role="tab" id="tab-plan" aria-selected="false">Plan your own</button>
+    </div>
+  </header>
+
+  <section class="panel planner" id="planner" hidden aria-label="Plan your nurture">
+    <h2>Plan your nurture</h2>
+    <p class="sub">Enter your tactics and message topics, pick the AI tool that writes each step, then run it below to see how leads move. When it looks right, copy the plan brief for review and sign-off.</p>
+    <div class="prow">
+      <div><label for="pName">Plan name</label><input id="pName" data-f="name"></div>
+      <div><label for="pType">Program type</label><select id="pType" data-f="type"><option value="b2b">B2B</option><option value="saas">SaaS trial</option></select></div>
+      <div><label for="pInd">Target industry</label><input id="pInd" data-f="ind"></div>
+      <div><label for="pTtl">Target titles</label><input id="pTtl" data-f="ttl"></div>
+      <div><label for="pOffer">Main offer</label><input id="pOffer" data-f="offer"></div>
+    </div>
+    <div class="ph"><h3>Triggers that open the Accelerate lane</h3><p>Pick the behaviors that mean a lead is ready for a bottom-funnel offer before the score gets there.</p></div>
+    <div class="trigs" id="pTrigs"></div>
+
+    <div class="ph"><h3>Standard nurture steps</h3><button type="button" class="small" id="addStd">+ Add step</button></div>
+    <div class="tbl"><table><thead><tr><th>Day</th><th>Channel</th><th>Message topic</th><th>Offer / CTA</th><th>Written with</th><th></th></tr></thead><tbody id="edStd"></tbody></table></div>
+
+    <div class="ph acc"><h3>Accelerate lane steps</h3><button type="button" class="small" id="addAcc">+ Add step</button></div>
+    <div class="tbl"><table><thead><tr><th>Days after trigger</th><th>Channel</th><th>Message topic</th><th>Offer / CTA</th><th>Written with</th><th></th></tr></thead><tbody id="edAcc"></tbody></table></div>
+
+    <div class="brief">
+      <div class="ph" style="margin-top:0"><h3>Plan brief for client sign-off</h3>
+        <span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="copied" id="copied" hidden>Copied</span><button type="button" class="small" id="resetPlan">Start from example</button><button type="button" class="small primary" id="copyBrief">Copy plan brief</button></span>
+        <p>Paste each step's topic into the AI Growth Accelerator tool listed beside it to write the copy.</p></div>
+      <label for="briefTxt" style="position:absolute;left:-9999px">Plan brief</label>
+      <textarea id="briefTxt" readonly></textarea>
+    </div>
+  </section>
+
+  <div class="grid">
+    <aside class="panel" aria-label="Set up the scenario">
+      <h2>Set the scenario</h2>
+      <div id="indWrap">
+        <label for="ind" style="margin-top:0">Industry</label>
+        <select id="ind">
+          <option value="mfg">Manufacturing</option>
+          <option value="msp">IT / MSP</option>
+          <option value="pro">Professional services</option>
+          <option value="ind">Industrial distribution</option>
+        </select>
+      </div>
+      <div id="sizeWrap" hidden>
+        <label for="size" style="margin-top:0">Company size</label>
+        <select id="size">
+          <option value="smb">11–50 employees</option>
+          <option value="mid" selected>51–200 employees</option>
+          <option value="ent">201–1,000 employees</option>
+        </select>
+      </div>
+
+      <label for="ttl">Job title</label>
+      <select id="ttl">
+        <option value="ceo">CEO / Founder</option>
+        <option value="vp" selected>VP Sales</option>
+        <option value="cmo">VP Marketing / CMO</option>
+        <option value="ops">Director of Operations</option>
+      </select>
+
+      <span class="lbl">ICP fit</span>
+      <div class="seg two" id="icp" role="group" aria-label="ICP fit">
+        <button type="button" data-v="1" aria-pressed="true">Strong</button>
+        <button type="button" data-v="0" aria-pressed="false">Partial</button>
+      </div>
+
+      <span class="lbl">Prospect behavior</span>
+      <div class="seg" id="beh" role="group" aria-label="Prospect behavior">
+        <button type="button" data-v="eng" aria-pressed="true">Ready</button>
+        <button type="button" data-v="luke" aria-pressed="false">Curious</button>
+        <button type="button" data-v="quiet" aria-pressed="false">Quiet</button>
+      </div>
+
+      <label for="thr">CRM threshold</label>
+      <input type="range" id="thr" min="5" max="9" step="0.5" value="7">
+      <div class="thr"><span>5</span><b id="thrv">7.0 / 10</b><span>9</span></div>
+
+      <label class="check" for="sdr" id="sdrWrap"><input type="checkbox" id="sdr" checked> Human SDR call in Accelerate (bonus)</label>
+
+      <div class="btns">
+        <button type="button" class="btn primary" id="play">Play</button>
+        <button type="button" class="btn" id="next">Next step</button>
+      </div>
+      <div class="btns" style="margin-top:8px"><button type="button" class="btn" id="reset">Reset</button></div>
+      <p class="note">Sample scenario for illustration. Names, companies, scores, and timing are examples.</p>
+    </aside>
+
+    <section class="panel" aria-label="Nurture lanes">
+      <div class="readout">
+        <div class="who">
+          <div class="name"><span id="pname">Dana Reyes</span><span class="sample">sample</span></div>
+          <div class="meta" id="pmeta"></div>
+        </div>
+        <div>
+          <div class="meter" aria-hidden="true"><div class="fill" id="fill"></div><div class="mark" id="mark"></div></div>
+          <div class="ticks"><span>0</span><span>5</span><span>10</span></div>
+        </div>
+        <div class="score" aria-live="polite"><span id="score">0.0</span><small id="scoreLbl">lead score</small></div>
+      </div>
+      <span class="status" id="status">Ready to start</span>
+
+      <div class="signals" id="signals"></div>
+      <div class="legend"><span>⚡</span> = trigger signal. Fires the Accelerate lane if the lead is still below the threshold.</div>
+
+      <div class="lanes">
+        <div class="lane std" id="laneStd">
+          <h3 id="stdTitle">Standard nurture <em id="stdPace"></em></h3>
+          <p class="sub" id="stdSub"></p>
+          <ol class="track" id="trackStd"></ol>
+        </div>
+        <div class="lane acc" id="laneAcc">
+          <h3 id="accTitle">Accelerate <em>3–4 touches · ~10 days</em></h3>
+          <p class="sub" id="accSub"></p>
+          <div id="accWait"></div>
+          <ol class="track" id="trackAcc"></ol>
+        </div>
+      </div>
+
+      <div id="outcome"></div>
+      <div class="log" id="log" aria-label="Activity log"></div>
+    </section>
+  </div>
+
+  <div class="caveat">
+    <b>This is a planning framework, not a promise.</b>
+    <ul>
+      <li>Every program is planned with you. Triggers, scoring rules, content, pacing, and thresholds are set to fit your sales process.</li>
+      <li>Scores, timing, and outcomes shown here are examples. Results vary by business, audience, offer, and the data available.</li>
+      <li>Website and product engagement signals depend on your tracking setup and visitor consent.</li>
+      <li>Channel mix and tools depend on what you already use. The Human SDR call is an optional add-on.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const MODES={
+ b2b:{
+  person:"Dana Reyes", scoreLbl:"lead score",
+  stdSub:"Education first. Steady pacing for leads with fit but low intent.",
+  accSub:"Bottom-funnel offer for leads showing buying behavior before they hit the threshold.",
+  pace:"9 touches · ~30 days",
+  sig:{open:["Opened email",0.3],guide:["Downloaded guide",1.0],visit:["Return site visit",0.8],
+       pricing:["Viewed services or pricing page",1.5,1],cases:["Viewed case study",1.0,1],
+       video:["Watched personalized video",1.0],reply:["Replied to email",2.0,1],click:["Clicked offer link",0.8],
+       call:["Took SDR call, interested",2.0],book:["Booked assessment",2.5]},
+  manual:["open","guide","visit","pricing","cases","video","reply"],
+  std:(c)=>[
+   {day:0,ch:"Email",t:"Welcome + the guide they downloaded",d:"Delivers the resource and sets expectations."},
+   {day:2,ch:"Email",t:`The ${c.ind} problem, in their words`,d:`Recaps ${c.pain} for a ${c.ttl}.`},
+   {day:4,ch:"LinkedIn",t:"Connection request with a short note",d:"Same voice as the emails, no pitch."},
+   {day:7,ch:"Email",t:"How a similar company approached it",d:"A short story built from the client's own results."},
+   {day:10,ch:"Email",t:"Answers to the questions buyers ask first",d:"Short FAQ-style email that handles early objections."},
+   {day:14,ch:"Email",t:"Practical checklist",d:`What a ${c.ttl} can fix this quarter.`},
+   {day:18,ch:"Video",t:"Short video walkthrough",d:"How the approach works, start to finish."},
+   {day:23,ch:"Email",t:"Cost of waiting",d:"Calculator link that shows the gap in their numbers."},
+   {day:30,ch:"Email",t:"Soft offer: free assessment",d:"Clear next step with a booking link."}],
+  acc:(c)=>[
+   {off:0,ch:"Email",t:"Bottom-funnel offer: free assessment",d:`Direct, short, tied to ${c.focus}.`},
+   {off:2,ch:"Video",t:"Personalized 60-second video",d:"Names their company and the page they viewed."},
+   {off:4,ch:"Human SDR",t:"Short qualifying call",d:"A real person checks timing and need.",sdr:1},
+   {off:7,ch:"Email",t:"Last offer email, easy yes",d:"Two time slots and a one-click booking link."}],
+  pat:{
+   eng:{std:[["open"],["open"],[],["open","pricing"]],acc:[["open"],["video"],["call"],["book"]]},
+   luke:{std:[["open"],[],[],[],["visit"],["cases"]],acc:[["open"],[],[],[]],after:[[],["open"],[]]},
+   quiet:{std:[["open"],[],[],[],[],["open"],[],[],[]]}
+  },
+  restTxt:"The lead rests for 60 days, then re-enters with fresh content. A new trigger in the meantime, such as a pricing-page visit, pulls them back in early."
+ },
+ saas:{
+  person:"Sam Okafor", scoreLbl:"PQL score",
+  stdSub:"Trial onboarding. Helps the user reach first value before the trial ends.",
+  accSub:"Sales-assist for trial users showing buying behavior before they qualify as a product-qualified lead.",
+  pace:"9 touches · 14-day trial",
+  sig:{open:["Opened email",0.2],setup:["Completed setup",1.0],core:["Used a core feature",1.0],
+       integ:["Connected an integration",1.0,1],invite:["Invited a teammate",1.5,1],limit:["Hit a plan limit",1.5,1],
+       pricing:["Viewed pricing or billing",1.5,1],click:["Clicked offer link",0.8],
+       call:["Took onboarding call",2.0],demo:["Booked guided demo",2.5]},
+  manual:["setup","core","integ","invite","limit","pricing"],
+  std:(c)=>[
+   {day:0,ch:"Email",t:"Welcome + first setup step",d:"One task that gets them to first value fast."},
+   {day:1,ch:"In-app",t:"Setup checklist nudge",d:"Shows what is left, with a progress bar."},
+   {day:2,ch:"Email",t:`Feature spotlight for a ${c.ttl}`,d:`The one feature tied to ${c.focus}.`},
+   {day:4,ch:"Email",t:"Activation tip",d:"Short how-to based on what they have not tried yet."},
+   {day:6,ch:"Email",t:"Customer story",d:`A ${c.size} team like theirs, built from the client's real results.`},
+   {day:8,ch:"Video",t:"Two-minute walkthrough",d:"The workflow most trial users miss."},
+   {day:10,ch:"Email",t:"Integration help",d:"Connect the tools they already use."},
+   {day:12,ch:"Email",t:"Trial ends in 2 days",d:"What they keep and what they lose."},
+   {day:14,ch:"Email",t:"Offer: extend the trial or talk to sales",d:"Two clear options, both one click."}],
+  acc:(c)=>[
+   {off:0,ch:"Email",t:"Personal note from a product specialist",d:"References what they just did in the product."},
+   {off:1,ch:"Email",t:"Offer: guided demo for their team",d:`Set up around ${c.focus}.`},
+   {off:3,ch:"Human SDR",t:"Onboarding call",d:"A real person helps finish setup and answers pricing.",sdr:1},
+   {off:5,ch:"Email",t:"Plan recommendation",d:"The plan that fits their usage, with the reason."}],
+  pat:{
+   eng:{std:[["setup"],[],["invite"]],acc:[["open"],["demo"],["call"],[]]},
+   luke:{std:[["setup"],[],["open"],[],["pricing"]],acc:[["open"],[],[],[]],after:[[],["open"],[],["open"]]},
+   quiet:{std:[["open"],[],[],[],[],[],[],["open"],[]]}
+  },
+  restTxt:"The trial ended below the PQL threshold. The user moves to a win-back nurture with a trial extension offer. Logging back in or inviting a teammate pulls them back in early."
+ }
+};
+const IND={mfg:["Manufacturing","Keystone Precision Parts","distributor leads that go nowhere"],msp:["IT / MSP","NorthGate IT Services","long sales cycles with no follow-up rhythm"],pro:["Professional services","Harbor & Wells Advisory","referral-only growth"],ind:["Industrial distribution","Ridgeline Supply Co.","quotes that never turn into orders"]};
+const SIZE={smb:["11–50","Brightlane Software"],mid:["51–200","Tallgrass Analytics"],ent:["201–1,000","Meridian Cloud Systems"]};
+const TTL={ceo:["CEO / Founder",2,"growth without adding headcount"],vp:["VP Sales",1.5,"more qualified meetings"],cmo:["VP Marketing",1.5,"proving which programs drive revenue"],ops:["Director of Operations",1,"fewer handoff gaps between teams"]};
+
+const TOOLS=["B2B-Lead Capture Nurture Cadence","B2B Email Writer Wizard","Cold Email Demo-Trial-Free-Offer","CRM Follow-up Messenger","ABM Message Assistant","Custom Email Pro","eBlast Email Crafter","Social Media / LinkedIn tools","Written by your team","No copy needed"];
+const CH=["Email","LinkedIn","Video","In-app","Human SDR","Direct mail"];
+const PLAN0={name:"Example: Q1 assessment nurture",type:"b2b",ind:"Manufacturing",ttl:"VP Sales, Director of Operations",offer:"Free revenue assessment",trig:["pricing","cases","reply"],
+ std:[{day:0,ch:"Email",t:"Welcome + guide delivery",o:"Guide download",tool:TOOLS[0]},
+  {day:3,ch:"Email",t:"Why distributor leads stall",o:"Read the blog post",tool:TOOLS[0]},
+  {day:5,ch:"LinkedIn",t:"Connect with a short note",o:"None",tool:TOOLS[7]},
+  {day:9,ch:"Email",t:"How a plant fixed its follow-up gap",o:"Case study",tool:TOOLS[0]},
+  {day:12,ch:"Email",t:"Common questions, answered",o:"Book a short call",tool:TOOLS[1]},
+  {day:17,ch:"Email",t:"Cost of slow follow-up",o:"ROI calculator",tool:TOOLS[1]},
+  {day:24,ch:"Video",t:"How the process works",o:"Watch video",tool:TOOLS[8]},
+  {day:31,ch:"Email",t:"Soft offer",o:"Free revenue assessment",tool:TOOLS[0]}],
+ acc:[{off:0,ch:"Email",t:"Assessment offer tied to the page they viewed",o:"Free revenue assessment",tool:TOOLS[2]},
+  {off:2,ch:"Video",t:"Personal 60-second video",o:"Book a time",tool:TOOLS[8]},
+  {off:4,ch:"Human SDR",t:"Short qualifying call",o:"Book assessment",tool:TOOLS[9]},
+  {off:7,ch:"Email",t:"Two time slots, easy yes",o:"Free revenue assessment",tool:TOOLS[2]}]};
+const clone=o=>JSON.parse(JSON.stringify(o));
+let plan=null; try{plan=JSON.parse(localStorage.getItem("nn-plan"));}catch(e){}
+if(!plan||!Array.isArray(plan.std)||!Array.isArray(plan.acc)||JSON.stringify(plan).includes("Retargeting"))plan=clone(PLAN0);
+function savePlan(){try{localStorage.setItem("nn-plan",JSON.stringify(plan));}catch(e){}}
+const esc=v=>String(v==null?"":v).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+function planMode(){
+  const b=MODES[plan.type]||MODES.b2b, sig={};
+  for(const k in b.sig){const v=b.sig[k].slice(0,2);if(plan.trig.includes(k))v.push(1);sig[k]=v;}
+  const S1=plan.std.slice().sort((a,c)=>(+a.day||0)-(+c.day||0)), A1=plan.acc.slice().sort((a,c)=>(+a.off||0)-(+c.off||0));
+  const last=S1.length?(+S1[S1.length-1].day||0):0;
+  return {person:b.person,scoreLbl:b.scoreLbl,stdSub:"Your standard sequence.",accSub:"Your bottom-funnel sequence. Opens when one of your triggers fires below the threshold.",
+   pace:`${S1.length} touches · ~${last} days`,sig,manual:b.manual,restTxt:b.restTxt,pat:b.pat,
+   std:()=>S1.map(x=>({day:+x.day||0,ch:x.ch,t:x.t||"(no topic yet)",d:`Offer: ${x.o||"none"} · Written with: ${x.tool}`})),
+   acc:()=>A1.map(x=>({off:+x.off||0,ch:x.ch,t:x.t||"(no topic yet)",d:`Offer: ${x.o||"none"} · Written with: ${x.tool}`}))};
+}
+function rowHtml(l,x,i){const dk=l==="std"?"day":"off";
+  return `<tr data-l="${l}" data-i="${i}"><td><input type="number" min="0" max="180" data-k="${dk}" value="${esc(x[dk])}" aria-label="Day"></td>`+
+  `<td><select data-k="ch" aria-label="Channel">${CH.map(c=>`<option${c===x.ch?" selected":""}>${c}</option>`).join("")}</select></td>`+
+  `<td><input data-k="t" value="${esc(x.t)}" aria-label="Message topic"></td><td><input data-k="o" value="${esc(x.o)}" aria-label="Offer"></td>`+
+  `<td><select data-k="tool" aria-label="Written with">${TOOLS.map(c=>`<option${c===x.tool?" selected":""}>${c}</option>`).join("")}</select></td>`+
+  `<td><button type="button" class="rm" data-rm aria-label="Remove step">×</button></td></tr>`;}
+function renderEditor(){
+  ["name","type","ind","ttl","offer"].forEach(f=>{const el=document.querySelector(`[data-f="${f}"]`);el.value=plan[f]||"";});
+  const b=MODES[plan.type]||MODES.b2b;
+  document.querySelector("#pTrigs").innerHTML=b.manual.map(k=>`<label><input type="checkbox" data-trig="${k}"${plan.trig.includes(k)?" checked":""}> ${b.sig[k][0]}</label>`).join("");
+  document.querySelector("#edStd").innerHTML=plan.std.map((x,i)=>rowHtml("std",x,i)).join("");
+  document.querySelector("#edAcc").innerHTML=plan.acc.map((x,i)=>rowHtml("acc",x,i)).join("");
+  renderBrief();
+}
+function renderBrief(){
+  const b=MODES[plan.type]||MODES.b2b, pm=planMode();
+  const L=[`NUSPARK NURTURE PLAN: ${plan.name||"Untitled"}`,`Program: ${plan.type==="saas"?"SaaS trial":"B2B"}`,`Target: ${plan.ind||"(industry)"} · ${plan.ttl||"(titles)"}`,`Main offer: ${plan.offer||"(offer)"}`,
+   `CRM threshold: ${st.thr.toFixed(1)} / 10`,`Accelerate triggers: ${plan.trig.map(k=>b.sig[k]?b.sig[k][0]:k).join(", ")||"(none chosen)"}`,"",
+   "STANDARD NURTURE"];
+  pm.std().forEach((x,i)=>{const r=plan.std.slice().sort((a,c)=>(+a.day||0)-(+c.day||0))[i];L.push(`Day ${x.day} · ${x.ch} · ${x.t} · Offer: ${r.o||"none"} · Write with: ${r.tool}`);});
+  L.push("","ACCELERATE LANE (opens when a trigger fires below the threshold)");
+  pm.acc().forEach((x,i)=>{const r=plan.acc.slice().sort((a,c)=>(+a.off||0)-(+c.off||0))[i];L.push(`Trigger day +${x.off} · ${x.ch} · ${x.t} · Offer: ${r.o||"none"} · Write with: ${r.tool}`);});
+  L.push("","RULES","- No response in Accelerate: lead returns to standard nurture.","- Score reaches threshold: lead moves to the CRM and sales is notified.",
+   `- Finishes below threshold: ${plan.type==="saas"?"win-back nurture with a trial extension offer.":"rests 60 days, then re-enters with fresh content."}`,
+   "","NEXT STEP","Paste each step's topic and offer into the AI Growth Accelerator tool listed to write the copy.",
+   "","APPROVAL","Client: ______________________   Date: __________","NuSpark Marketing: ______________________   Date: __________",
+   "","This is a planning document. Timing, scores, and outcomes vary by business, audience, offer, and the data available.");
+  document.querySelector("#briefTxt").value=L.join("\n");
+}
+let mode="b2b", st={ind:"mfg",size:"mid",ttl:"vp",icp:1,beh:"eng",thr:7,sdr:true};
+let S;
+function fresh(){return {score:0,started:false,lane:"std",std:-1,acc:-1,accUsed:false,trigDay:0,day:0,ev:{},done:false,out:null,afterIdx:0,stdTrigAt:-1};}
+S=fresh(); let timer=null;
+
+const M=()=>mode==="plan"?planMode():MODES[mode];
+function ctx(){const t=TTL[st.ttl];if(mode==="plan")return {ind:plan.ind||"your industry",co:"Example company",pain:"the problem your offer solves",ttl:(plan.ttl||t[0]).split(",")[0].trim(),focus:t[2],size:""};return mode==="b2b"?{ind:IND[st.ind][0],co:IND[st.ind][1],pain:IND[st.ind][2],ttl:t[0],focus:t[2]}:{size:SIZE[st.size][0]+" person",co:SIZE[st.size][1],ttl:t[0],focus:t[2]};}
+function stdList(){return M().std(ctx());}
+function accList(){return M().acc(ctx()).filter(x=>mode==="plan"||!x.sdr||st.sdr);}
+function base(){return Math.min(10,(st.icp?1.5:0.5)+TTL[st.ttl][1]*0.6+(mode==="b2b"?1.5:1.2));}
+const fmt=n=>n.toFixed(1);
+function log(m,c){const e=document.createElement("div");if(c)e.className=c;e.textContent=m;$("#log").prepend(e);}
+function stop(){if(timer){clearInterval(timer);timer=null;}}
+
+function addSig(key,where){
+  const s=M().sig[key]; if(!s)return;
+  S.score=Math.min(10,S.score+s[1]);
+  if(where){(S.ev[where]=S.ev[where]||[]).push(key);}
+  log(`+${s[1].toFixed(1)}  ${s[0]}  (${fmt(S.score)})`,"up");
+  if(S.score>=st.thr&&!S.done){S.done=true;S.out="crm";stop();log(`→ ${fmt(S.score)} crossed ${fmt(st.thr)}. Moved to CRM. Sales notified.`,"go");return;}
+  if(s[2]&&S.lane==="std"&&!S.accUsed&&!S.done){
+    S.lane="acc";S.accUsed=true;S.acc=-1;S.trigDay=S.day;S.trigBy=s[0];
+    log(`⚡ Trigger: ${s[0].toLowerCase()} below threshold. Switching to Accelerate.`,"tr");
+  }
+}
+function start(){S.started=true;S.score=base();log(`Lead captured and enters nurture. Starting score ${fmt(S.score)} from fit, title, and ${mode==="b2b"?"source":"trial signup"}.`);}
+function step(){
+  if(S.done)return;
+  if(!S.started)start();
+  const P=M().pat[st.beh];
+  if(S.lane==="acc"){
+    const A=accList(); S.acc++;
+    if(S.acc>=A.length){S.lane="std";log("No response in Accelerate. Back to standard nurture.","tr");S.stdTrigAt=S.std;return step();}
+    const it=A[S.acc]; S.day=S.trigDay+it.off;
+    log(`Day ${S.day}: ${it.ch}: ${it.t}`);
+    // map visible accel index to pattern index (SDR may be hidden)
+    const full=M().acc(ctx()); const pi=full.indexOf(full.find(x=>x.t===it.t));
+    (P.acc&&P.acc[pi]||[]).forEach(k=>{if(!S.done)addSig(k,"a"+S.acc);});
+  }else{
+    const L=stdList(); S.std++;
+    if(S.std>=L.length){S.std=L.length-1;return finish();}
+    const it=L[S.std]; S.day=Math.max(it.day,S.day+(S.started&&S.std>0?1:0));
+    log(`Day ${S.day}: ${it.ch}: ${it.t}`);
+    let sigs;
+    if(S.stdTrigAt>=0&&P.after){sigs=P.after[S.afterIdx++]||[];}
+    else sigs=P.std[S.std]||[];
+    sigs.forEach(k=>{if(!S.done)addSig(k,"s"+S.std);});
+    if(!S.done&&S.lane==="std"&&S.std===L.length-1)finish();
+  }
+}
+function finish(){if(S.done)return;S.done=true;S.out=S.score>=st.thr?"crm":"rest";stop();if(S.out==="rest")log(`Sequence complete at ${fmt(S.score)}.`);}
+
+function stepHtml(it,k,lane){
+  const id=(lane==="std"?"s":"a")+k;
+  const pos=lane==="std"?S.std:S.acc;
+  const active=S.lane===lane&&!S.done;
+  let cls="step",tag="queued",day=lane==="std"?it.day:("+"+it.off);
+  if(lane==="acc"&&S.accUsed)day=S.trigDay+it.off;
+  if(lane==="acc"&&!S.accUsed){tag="standby";}
+  if(k<=pos&&(lane==="std"||S.accUsed)){cls+=" sent";tag=it.ch==="Human SDR"?"called":"sent";}
+  if(k===pos&&active)cls+=" now";
+  if(S.done&&k>pos){cls+=" skip";tag=S.out==="crm"?"not needed":"stopped";}
+  if(lane==="std"&&S.lane==="acc"&&k>pos&&!S.done){tag="paused";}
+  const ev=(S.ev[id]||[]).map(x=>M().sig[x][0]+(M().sig[x][2]?" ⚡":"")).join(" · ");
+  return `<li class="${cls}"><div class="day">day<b>${day}</b></div><div style="min-width:0"><div class="ch">${it.ch}</div><div class="t">${it.t}</div><div class="d">${it.d}</div>${ev?`<div class="ev">↑ ${ev}</div>`:""}</div><span class="tag">${tag}</span></li>`;
+}
+function render(){
+  const c=ctx(),m=M();
+  $("#pname").textContent=m.person;
+  $("#pmeta").textContent=mode==="plan"?`${plan.ttl||"Target title"} · ${plan.ind||"Target industry"} · ${plan.type==="saas"?"SaaS trial":"B2B"}`:mode==="b2b"?`${c.ttl} · ${c.co} · ${c.ind}`:`${c.ttl} · ${c.co} · ${SIZE[st.size][0]} employees · 14-day trial`;
+  $("#scoreLbl").textContent=m.scoreLbl;
+  $("#score").textContent=fmt(S.score);
+  $("#fill").style.width=(S.score*10)+"%";
+  $("#fill").style.background=S.out==="crm"?"var(--good)":S.lane==="acc"?"var(--amber)":"var(--teal)";
+  $("#mark").style.left=`calc(${st.thr*10}% - 1.5px)`;
+  $("#thrv").textContent=fmt(st.thr)+" / 10";
+  const s=$("#status");
+  s.className="status"+(S.out==="crm"?" crm":S.out==="rest"?" rest":S.lane==="acc"?" acc":"");
+  s.textContent=S.out==="crm"?"Moved to CRM · sales notified":S.out==="rest"?(mode==="b2b"?"Resting · recycles in 60 days":"Trial ended · win-back nurture"):!S.started?"Ready to start":S.lane==="acc"?"Accelerate lane · bottom-funnel offer":"Standard nurture";
+  $("#stdSub").textContent=m.stdSub; $("#accSub").textContent=m.accSub; $("#stdPace").textContent=m.pace;
+  $("#trackStd").innerHTML=stdList().map((it,k)=>stepHtml(it,k,"std")).join("");
+  $("#trackAcc").innerHTML=accList().map((it,k)=>stepHtml(it,k,"acc")).join("");
+  $("#accWait").innerHTML=!S.accUsed?`<div class="waiting">On standby. Opens when a <b>⚡ trigger</b> fires and the score is still under ${fmt(st.thr)}.</div>`:S.lane==="acc"&&!S.done?`<div class="waiting">Triggered on day ${S.trigDay} by <b>${S.trigBy.toLowerCase()}</b>.</div>`:"";
+  $("#laneStd").classList.toggle("live",S.started&&S.lane==="std"&&!S.done);
+  $("#laneAcc").classList.toggle("live",S.lane==="acc"&&!S.done);
+  $("#signals").innerHTML=`<span class="lbl">Add a signal yourself</span>`+m.manual.map(k=>{const g=m.sig[k];return `<button type="button" class="sig${g[2]?" trig":""}" data-s="${k}" ${S.done?"disabled":""}>${g[0]} <b>+${g[1].toFixed(1)}</b></button>`}).join("");
+  $("#next").disabled=S.done;$("#play").disabled=S.done;$("#play").textContent=timer?"Pause":"Play";
+  const O=$("#outcome");
+  if(S.out==="crm"){
+    const why=[...new Set(Object.values(S.ev).flat())].filter(k=>m.sig[k][1]>=0.8).map(k=>m.sig[k][0].toLowerCase());
+    O.innerHTML=`<div class="handoff"><h3>Sales alert sent</h3><p><b>${m.person}</b>, ${c.ttl} at ${c.co}, crossed ${fmt(st.thr)} with a ${m.scoreLbl} of ${fmt(S.score)} on day ${S.day}${S.accUsed?", after the Accelerate lane opened on day "+S.trigDay:""}. Moved to the CRM.</p><ul>${why.slice(0,5).map(w=>`<li>${w}</li>`).join("")}<li>Remaining nurture steps stopped</li></ul></div>`;
+  }else if(S.out==="rest"){O.innerHTML=`<div class="rest"><h3>Finished below threshold</h3>Score ended at ${fmt(S.score)}. ${m.restTxt}</div>`;}
+  else O.innerHTML="";
+}
+function reset(){stop();S=fresh();$("#log").innerHTML="";render();}
+function setMode(m){mode=m;["b2b","saas","plan"].forEach(k=>$("#tab-"+k).setAttribute("aria-selected",m===k));$("#indWrap").hidden=m!=="b2b";$("#sizeWrap").hidden=m!=="saas";$("#sdrWrap").hidden=m==="plan";$("#planner").hidden=m!=="plan";if(m==="plan")renderEditor();reset();demoOpen();}
+$("#tab-plan").onclick=()=>setMode("plan");
+const PL=$("#planner");
+function planChanged(){savePlan();renderBrief();reset();}
+PL.addEventListener("input",e=>{const t=e.target;
+  if(t.dataset.f){plan[t.dataset.f]=t.value;if(t.dataset.f==="type"){const b=MODES[plan.type];plan.trig=b.manual.filter(k=>b.sig[k][2]);renderEditor();}planChanged();return;}
+  if(t.dataset.trig){const k=t.dataset.trig;plan.trig=t.checked?[...new Set([...plan.trig,k])]:plan.trig.filter(x=>x!==k);planChanged();return;}
+  const tr=t.closest("tr[data-l]");if(tr&&t.dataset.k){plan[tr.dataset.l][+tr.dataset.i][t.dataset.k]=t.value;planChanged();}});
+PL.addEventListener("click",e=>{const rm=e.target.closest("[data-rm]");if(rm){const tr=rm.closest("tr");plan[tr.dataset.l].splice(+tr.dataset.i,1);renderEditor();planChanged();}});
+$("#addStd").onclick=()=>{const last=plan.std.reduce((m,x)=>Math.max(m,+x.day||0),0);plan.std.push({day:last+4,ch:"Email",t:"",o:"",tool:TOOLS[0]});renderEditor();planChanged();};
+$("#addAcc").onclick=()=>{const last=plan.acc.reduce((m,x)=>Math.max(m,+x.off||0),0);plan.acc.push({off:last+2,ch:"Email",t:"",o:"",tool:TOOLS[2]});renderEditor();planChanged();};
+$("#resetPlan").onclick=()=>{plan=clone(PLAN0);renderEditor();planChanged();};
+$("#copyBrief").onclick=()=>{const ta=$("#briefTxt");const ok=()=>{const c=$("#copied");c.hidden=false;setTimeout(()=>c.hidden=true,2000);};
+  try{navigator.clipboard.writeText(ta.value).then(ok,()=>{ta.focus();ta.select();});}catch(err){ta.focus();ta.select();}};
+
+$("#tab-b2b").onclick=()=>setMode("b2b");
+$("#tab-saas").onclick=()=>setMode("saas");
+document.querySelectorAll(".seg").forEach(g=>g.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;g.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));st[g.id]=g.id==="icp"?+b.dataset.v:b.dataset.v;reset();}));
+$("#ind").onchange=e=>{st.ind=e.target.value;reset();};
+$("#size").onchange=e=>{st.size=e.target.value;reset();};
+$("#ttl").onchange=e=>{st.ttl=e.target.value;reset();};
+$("#thr").oninput=e=>{st.thr=+e.target.value;if(mode==="plan")renderBrief();render();};
+$("#sdr").onchange=e=>{st.sdr=e.target.checked;reset();};
+$("#next").onclick=()=>{step();render();};
+$("#reset").onclick=reset;
+$("#play").onclick=()=>{if(timer){stop();render();return;}step();render();if(S.done)return;timer=setInterval(()=>{step();render();},1100);render();};
+$("#signals").addEventListener("click",e=>{const b=e.target.closest(".sig");if(!b||S.done)return;if(!S.started){start();step();}
+  if(S.done){render();return;}
+  const where=S.lane==="acc"&&S.acc>=0?"a"+S.acc:"s"+Math.max(S.std,0);addSig(b.dataset.s,where);render();});
+
+function demoOpen(){step();step();step();render();}
+demoOpen();
+})();
+</script>
+
+<script>
+/* Tell the parent page (Divi embed) how tall this page is, so the iframe fits with no inner scrollbar */
+(function(){function send(){try{parent.postMessage({nusparkNurtureHeight:document.documentElement.scrollHeight},"*");}catch(e){}}
+window.addEventListener("load",send);new ResizeObserver(send).observe(document.body);document.addEventListener("click",function(){setTimeout(send,60);});})();
+</script>
+</body>
+</html>
