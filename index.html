@@ -329,8 +329,8 @@ const MODES={
    {off:4,ch:"Human SDR",t:"Short qualifying call",d:"A real person checks timing and need.",sdr:1},
    {off:7,ch:"Email",t:"Last offer email, easy yes",d:"Two time slots and a one-click booking link."}],
   pat:{
-   eng:{std:[["open"],["open"],[],["open","pricing"]],acc:[["open"],["video"],["call"],["book"]]},
-   luke:{std:[["open"],[],[],[],["visit"],["cases"]],acc:[["open"],[],[],[]],after:[[],["open"],[]]},
+   eng:{std:[["open"],[],[],["open","pricing"]],acc:[["open"],["video"],["call"],["book"]]},
+   luke:{std:[["open"],[],[],[],["visit"],["cases"]],acc:[[],[],[],[]],after:[[],["open"],[]]},
    quiet:{std:[["open"],[],[],[],[],["open"],[],[],[]]}
   },
   restTxt:"The lead rests for 60 days, then re-enters with fresh content. A new trigger in the meantime, such as a pricing-page visit, pulls them back in early."
@@ -362,7 +362,7 @@ const MODES={
    {off:5,ch:"Email",t:"Plan recommendation",d:"The plan that fits their usage, with the reason."}],
   pat:{
    eng:{std:[["setup"],[],["invite"]],acc:[["open"],["demo"],["call"],[]]},
-   luke:{std:[["setup"],[],["open"],[],["pricing"]],acc:[["open"],[],[],[]],after:[[],["open"],[],["open"]]},
+   luke:{std:[["open"],[],["open"],[],["pricing"]],acc:[["open"],[],[],[]],after:[[],["open"],[],["open"]]},
    quiet:{std:[["open"],[],[],[],[],[],[],["open"],[]]}
   },
   restTxt:"The trial ended below the PQL threshold. The user moves to a win-back nurture with a trial extension offer. Logging back in or inviting a teammate pulls them back in early."
@@ -440,7 +440,7 @@ const M=()=>mode==="plan"?planMode():MODES[mode];
 function ctx(){const t=TTL[st.ttl];if(mode==="plan")return {ind:plan.ind||"your industry",co:"Example company",pain:"the problem your offer solves",ttl:(plan.ttl||t[0]).split(",")[0].trim(),focus:t[2],size:""};return mode==="b2b"?{ind:IND[st.ind][0],co:IND[st.ind][1],pain:IND[st.ind][2],ttl:t[0],focus:t[2]}:{size:SIZE[st.size][0]+" person",co:SIZE[st.size][1],ttl:t[0],focus:t[2]};}
 function stdList(){return M().std(ctx());}
 function accList(){return M().acc(ctx()).filter(x=>mode==="plan"||!x.sdr||st.sdr);}
-function base(){return Math.min(10,(st.icp?1.5:0.5)+TTL[st.ttl][1]*0.6+(mode==="b2b"?1.5:1.2));}
+function base(){return Math.min(10,4+(st.icp?0.3:0)+(TTL[st.ttl][1]-1)*0.3);} // nurture starts at 4+, matching the LeadScore Nurture tier
 const fmt=n=>n.toFixed(1);
 function log(m,c){const e=document.createElement("div");if(c)e.className=c;e.textContent=m;$("#log").prepend(e);}
 function stop(){if(timer){clearInterval(timer);timer=null;}}
@@ -456,7 +456,7 @@ function addSig(key,where){
     log(`⚡ Trigger: ${s[0].toLowerCase()} below threshold. Switching to Accelerate.`,"tr");
   }
 }
-function start(){S.started=true;S.score=base();log(`Lead captured and enters nurture. Starting score ${fmt(S.score)} from fit, title, and ${mode==="b2b"?"source":"trial signup"}.`);}
+function start(){S.started=true;S.score=base();log(`Lead captured and enters nurture. Starting score ${fmt(S.score)} (Nurture tier, 4 and up) from fit and title.`);}
 function step(){
   if(S.done)return;
   if(!S.started)start();
@@ -562,7 +562,6 @@ demoOpen();
 </script>
 
 <script>
-/* Tell the parent page (Divi embed) how tall this page is, so the iframe fits with no inner scrollbar */
 (function(){function send(){try{parent.postMessage({nusparkNurtureHeight:document.documentElement.scrollHeight},"*");}catch(e){}}
 window.addEventListener("load",send);new ResizeObserver(send).observe(document.body);document.addEventListener("click",function(){setTimeout(send,60);});})();
 </script>
